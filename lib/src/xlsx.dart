@@ -287,10 +287,14 @@ class XlsxDecoder extends SpreadsheetDecoder {
   void _parseContent() {
     var workbook = _archive.findFile('xl/workbook.xml');
     workbook?.decompress();
-    var document = XmlDocument.parse(utf8.decode(workbook?.content));
-    document.findAllElements('sheet').forEach((node) {
-      _parseTable(node);
-    });
+    var content = workbook?.content;
+
+    if (content != null) {
+      var document = XmlDocument.parse(utf8.decode(content));
+      document.findAllElements('sheet').forEach((node) {
+        _parseTable(node);
+      });
+    }
   }
 
   void _parseTable(XmlElement node) {
@@ -302,19 +306,23 @@ class XlsxDecoder extends SpreadsheetDecoder {
     var file = _archive.findFile(namePath);
     file?.decompress();
 
-    var content = XmlDocument.parse(utf8.decode(file?.content));
-    var worksheet = content.findElements('worksheet').first;
-    var sheet = worksheet.findElements('sheetData').first;
+    var fileContent = file?.content;
 
-    _findRows(sheet).forEach((child) {
-      _parseRow(child, table);
-    });
-    if (_update == true) {
-      _sheets[name] = sheet;
-      _xmlFiles[namePath] = content;
+    if (fileContent != null) {
+      var content = XmlDocument.parse(utf8.decode(fileContent));
+      var worksheet = content.findElements('worksheet').first;
+      var sheet = worksheet.findElements('sheetData').first;
+
+      _findRows(sheet).forEach((child) {
+        _parseRow(child, table);
+      });
+      if (_update == true) {
+        _sheets[name] = sheet;
+        _xmlFiles[namePath] = content;
+      }
+
+      _normalizeTable(table);
     }
-
-    _normalizeTable(table);
   }
 
   void _parseRow(XmlElement node, SpreadsheetTable table) {

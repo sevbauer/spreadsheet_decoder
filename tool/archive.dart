@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:archive/archive.dart';
 import 'package:path/path.dart';
 
@@ -7,9 +6,10 @@ Archive cloneArchive(Archive archive) {
   var clone = Archive();
   for (var file in archive.files) {
     if (file.isFile) {
-      var content = file.content as Uint8List;
+      var content = file.content;
       var copy = ArchiveFile(file.name, content.length, content)
-        ..compress = file.compress;
+        ..compressionLevel = file.compressionLevel
+        ..compression = file.compression;
       clone.addFile(copy);
     }
   }
@@ -35,9 +35,8 @@ void main(List<String> args) {
     if (file is File) {
       var input = file.path;
       print(input);
-      var archive =
-          ZipDecoder().decodeBytes(File(input).readAsBytesSync(), verify: true);
-      var zip = ZipEncoder().encode(cloneArchive(archive)) as List<int>;
+      var archive = ZipDecoder().decodeBytes(File(input).readAsBytesSync(), verify: true);
+      var zip = ZipEncoder().encode(cloneArchive(archive));
       try {
         archive = ZipDecoder().decodeBytes(zip, verify: true);
         var file = File('test/out/example/${basename(input)}')
